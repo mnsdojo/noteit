@@ -22,6 +22,28 @@ class NoteDatabase extends _$NoteDatabase {
   NoteDatabase() : super(_openConnection());
   @override
   int get schemaVersion => 1;
+
+  Stream<List<NoteItem>> watchNotes() => select(noteItems).watch();
+
+  Future<void> addNote(String title, String description) async {
+    await into(noteItems).insert(
+        NoteItemsCompanion.insert(title: title, description: description));
+  }
+
+  Future<void> deleteNoteById(int id) async {
+    await (delete(noteItems)..where((tbl) => tbl.id.equals(id))).go();
+  }
+
+  Future<void> updateNote(NoteItem note) async {
+    final existinnote = await (select(noteItems)
+          ..where((tbl) => tbl.id.equals(note.id)))
+        .getSingleOrNull();
+    if (existinnote != null) {
+      await update(noteItems).replace(note);
+    } else {
+      throw Exception("Note with id : ${note.id} not found");
+    }
+  }
 }
 
 LazyDatabase _openConnection() {
